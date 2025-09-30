@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import interviewService from '../../services/interviewService';
 import Header from '../../components/ui/Header';
 import CandidateProgressIndicator from '../../components/ui/CandidateProgressIndicator';
 import ScoreDisplay from './components/ScoreDisplay';
@@ -14,142 +15,145 @@ const InterviewComplete = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Mock interview completion data
-  const mockInterviewData = {
-    candidate: {
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      phone: '+1 (555) 123-4567',
-      position: 'Senior Frontend Developer',
-      interviewId: 'INT-2025-001',
-      completedAt: '2025-09-29 13:38:45'
-    },
-    results: {
-      finalScore: 85,
-      percentileRank: 78,
-      totalQuestions: 6,
-      correctAnswers: 5,
-      totalDuration: '8m 45s',
-      startTime: '2025-09-29 13:30:00',
-      endTime: '2025-09-29 13:38:45'
-    },
-    summary: {
-      overview: `Based on your interview performance, you demonstrated strong technical knowledge in React and JavaScript fundamentals. Your problem-solving approach shows methodical thinking, though there's room for improvement in optimization techniques. Communication was clear and professional throughout the session.`,
-      technicalAccuracy: `You correctly answered 5 out of 6 questions with particularly strong performance in React hooks and component lifecycle questions. Your understanding of state management and event handling is solid. The areas that need attention include advanced optimization patterns and performance monitoring techniques.`,
-      problemSolving: `Your approach to breaking down complex problems was systematic and logical. You effectively used pseudocode to plan solutions before implementation. However, consider exploring edge cases more thoroughly and discussing alternative approaches to demonstrate deeper analytical thinking.`,
-      communication: `You articulated your thought process clearly and asked relevant clarifying questions when needed. Your explanations of technical concepts were well-structured. To enhance further, practice explaining complex topics with simpler analogies and maintain consistent eye contact during explanations.`,
-      recommendations: [
-        "Focus on advanced React performance optimization techniques",
-        "Practice system design questions for senior-level positions", 
-        "Strengthen knowledge in testing methodologies and best practices",
-        "Explore modern deployment and CI/CD practices"
-      ]
-    },
-    questionBreakdown: [
-      {
-        id: 1,
-        question: "Explain the difference between useState and useReducer hooks in React",
-        difficulty: 'easy',score: 95,timeSpent: '18s',maxTime: '20s',
-        aiInsight: "Excellent explanation with clear examples and use cases. Demonstrated deep understanding of React hooks."
-      },
-      {
-        id: 2,
-        question: "How would you optimize a React component that renders a large list?",
-        difficulty: 'easy',score: 88,timeSpent: '19s',maxTime: '20s',
-        aiInsight: "Good coverage of virtualization and memoization. Could have mentioned React.memo and useMemo in more detail."
-      },
-      {
-        id: 3,
-        question: "Implement a custom hook for handling API calls with loading states",
-        difficulty: 'medium',score: 82,timeSpent: '55s',maxTime: '60s',
-        aiInsight: "Solid implementation with proper error handling. Consider adding cleanup for cancelled requests."
-      },
-      {
-        id: 4,
-        question: "Design a scalable state management solution for a large React application",
-        difficulty: 'medium',score: 78,timeSpent: '58s',maxTime: '60s',
-        aiInsight: "Good understanding of Redux patterns. Could improve by discussing context API alternatives and performance implications."
-      },
-      {
-        id: 5,
-        question: "Explain how you would implement server-side rendering with React",
-        difficulty: 'hard',score: 85,timeSpent: '110s',maxTime: '120s',
-        aiInsight: "Comprehensive answer covering Next.js and manual SSR setup. Excellent discussion of hydration challenges."
-      },
-      {
-        id: 6,
-        question: "Design a micro-frontend architecture using React",
-        difficulty: 'hard',score: 72,timeSpent: '115s',maxTime: '120s',
-        aiInsight: "Basic understanding shown but missed key concepts like module federation and shared dependencies."
-      }
-    ],
-    timeline: {
-      totalDuration: '8m 45s',startTime: '2025-09-29 13:30:00',endTime: '2025-09-29 13:38:45',
-      questionTimes: {
-        easy: '37s',medium: '1m 53s',hard: '3m 45s'
-      },
-      phases: [
-        {
-          id: 1,
-          phase: 'Interview Started',time: '13:30:00',duration: null,icon: 'Play',status: 'completed'
-        },
-        {
-          id: 2,
-          phase: 'Easy Questions',time: '13:30:15',duration: '37s',icon: 'CheckCircle',status: 'completed',details: '2 questions completed'
-        },
-        {
-          id: 3,
-          phase: 'Medium Questions',time: '13:30:52',duration: '1m 53s',icon: 'CheckCircle',status: 'completed',details: '2 questions completed'
-        },
-        {
-          id: 4,
-          phase: 'Hard Questions',time: '13:32:45',duration: '3m 45s',icon: 'CheckCircle',status: 'completed',details: '2 questions completed'
-        },
-        {
-          id: 5,
-          phase: 'Interview Completed',time: '13:38:45',duration: null,icon: 'Trophy',status: 'completed'
-        }
-      ]
-    }
-  };
-
   useEffect(() => {
-    // Simulate loading interview data
     const loadInterviewData = async () => {
       setLoading(true);
       
       try {
-        // Check for stored interview data
-        const storedData = localStorage.getItem('completed_interview');
-        if (storedData) {
-          setInterviewData(JSON.parse(storedData));
+        // Get the most recent completed interview
+        const completedInterviews = interviewService.getCompletedInterviews();
+        
+        if (completedInterviews.length > 0) {
+          const latestInterview = completedInterviews[completedInterviews.length - 1];
+          
+          // Transform interview session data to match component expectations
+          const transformedData = transformInterviewData(latestInterview);
+          setInterviewData(transformedData);
         } else {
-          // Use mock data if no stored data
-          setInterviewData(mockInterviewData);
-          // Store mock data for consistency
-          localStorage.setItem('completed_interview', JSON.stringify(mockInterviewData));
+          // No completed interviews found, redirect to resume upload
+          navigate('/resume-upload');
+          return;
         }
       } catch (error) {
         console.error('Error loading interview data:', error);
-        setInterviewData(mockInterviewData);
+        navigate('/resume-upload');
       } finally {
         setLoading(false);
       }
     };
 
     loadInterviewData();
-  }, []);
+  }, [navigate]);
+
+  const transformInterviewData = (interviewSession) => {
+    const { candidateData, questions, answers, evaluations, finalSummary, startTime, endTime } = interviewSession;
+    
+    // Calculate total score
+    const totalScore = evaluations.reduce((sum, eval) => sum + (eval.score || 0), 0);
+    const maxTotalScore = evaluations.reduce((sum, eval) => sum + (eval.maxScore || 0), 0);
+    const finalScore = maxTotalScore > 0 ? Math.round((totalScore / maxTotalScore) * 100) : 0;
+    
+    // Calculate duration
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const durationMs = end - start;
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    const totalDuration = `${minutes}m ${seconds}s`;
+    
+    return {
+      candidate: {
+        name: candidateData.fullName,
+        email: candidateData.email,
+        phone: candidateData.phone,
+        position: candidateData.position || 'Full Stack Developer',
+        interviewId: interviewSession.id,
+        completedAt: endTime
+      },
+      results: {
+        finalScore,
+        percentileRank: Math.min(finalScore + 10, 95), // Mock percentile
+        totalQuestions: questions.length,
+        correctAnswers: evaluations.filter(e => e.score >= e.maxScore * 0.7).length,
+        totalDuration,
+        startTime,
+        endTime
+      },
+      summary: {
+        overview: finalSummary?.summary || 'Strong technical performance demonstrated.',
+        technicalAccuracy: finalSummary?.detailedFeedback || 'Good technical understanding shown.',
+        problemSolving: 'Systematic approach to problem-solving with clear explanations.',
+        communication: 'Clear communication throughout the interview.',
+        recommendations: finalSummary?.nextSteps || ['Continue with technical assessment']
+      },
+      questionBreakdown: questions.map((question, index) => ({
+        id: question.id,
+        question: question.title,
+        difficulty: question.difficulty,
+        score: evaluations[index]?.score || 0,
+        timeSpent: `${answers[index]?.timeSpent || 60}s`,
+        maxTime: `${question.timeLimit}s`,
+        aiInsight: evaluations[index]?.feedback || 'Good response provided.'
+      })),
+      timeline: {
+        totalDuration,
+        startTime: new Date(startTime).toLocaleTimeString(),
+        endTime: new Date(endTime).toLocaleTimeString(),
+        questionTimes: {
+          easy: '40s',
+          medium: '2m 00s', 
+          hard: '4m 00s'
+        },
+        phases: [
+          {
+            id: 1,
+            phase: 'Interview Started',
+            time: new Date(startTime).toLocaleTimeString(),
+            duration: null,
+            icon: 'Play',
+            status: 'completed'
+          },
+          {
+            id: 2,
+            phase: 'Easy Questions',
+            time: new Date(startTime).toLocaleTimeString(),
+            duration: '40s',
+            icon: 'CheckCircle',
+            status: 'completed',
+            details: '2 questions completed'
+          },
+          {
+            id: 3,
+            phase: 'Medium Questions',
+            time: new Date(Date.parse(startTime) + 60000).toLocaleTimeString(),
+            duration: '2m 00s',
+            icon: 'CheckCircle',
+            status: 'completed',
+            details: '2 questions completed'
+          },
+          {
+            id: 4,
+            phase: 'Hard Questions',
+            time: new Date(Date.parse(startTime) + 180000).toLocaleTimeString(),
+            duration: '4m 00s',
+            icon: 'CheckCircle',
+            status: 'completed',
+            details: '2 questions completed'
+          },
+          {
+            id: 5,
+            phase: 'Interview Completed',
+            time: new Date(endTime).toLocaleTimeString(),
+            duration: null,
+            icon: 'Trophy',
+            status: 'completed'
+          }
+        ]
+      }
+    };
+  };
 
   const handleInterviewComplete = (completedData) => {
-    // Store completed interview in results
-    const existingResults = JSON.parse(localStorage.getItem('interview_results') || '[]');
-    existingResults?.push(completedData);
-    localStorage.setItem('interview_results', JSON.stringify(existingResults));
-    
-    // Clear current interview session
-    localStorage.removeItem('completed_interview');
-    localStorage.removeItem('interview_session');
-    
     console.log('Interview completed and stored:', completedData);
   };
 

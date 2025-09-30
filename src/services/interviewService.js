@@ -276,8 +276,13 @@ class InterviewService {
   }
 
   getMockFinalSummary(session) {
+<<<<<<< HEAD
   const totalScore = session.evaluations.reduce((sum, evaluation) => sum + evaluation.score, 0);
   const maxScore = session.evaluations.reduce((sum, evaluation) => sum + evaluation.maxScore, 0);
+=======
+    const totalScore = session.evaluations.reduce((sum, eval) => sum + eval.score, 0);
+    const maxScore = session.evaluations.reduce((sum, eval) => sum + eval.maxScore, 0);
+>>>>>>> 8a707f85abefdd2023ef0b8e8cf4df6739a4cfab
     const percentage = Math.round((totalScore / maxScore) * 100);
 
     return {

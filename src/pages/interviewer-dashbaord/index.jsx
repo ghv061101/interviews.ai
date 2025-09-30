@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import interviewService from '../../services/interviewService';
 import Header from '../../components/ui/Header';
 import InterviewerCandidateTable from '../../components/ui/InterviewerCandidateTable';
 import DashboardMetrics from './components/DashboardMetrics';
@@ -20,144 +21,87 @@ const InterviewerDashboard = () => {
     pendingInterviews: 0
   });
 
-  // Mock candidates data
-  const mockCandidates = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@email.com',
-      position: 'Senior Frontend Developer',
-      status: 'completed',
-      score: 92,
-      interviewDate: '2025-09-29',
-      duration: '45 min',
-      experience: '5 years',
-      skills: ['React', 'TypeScript', 'Node.js'],
-      avatar: null,
-      completedAt: '2025-09-29 12:30:00'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      email: 'michael.chen@email.com',
-      position: 'Full Stack Developer',
-      status: 'completed',
-      score: 88,
-      interviewDate: '2025-09-29',
-      duration: '42 min',
-      experience: '3 years',
-      skills: ['Vue.js', 'Python', 'PostgreSQL'],
-      avatar: null,
-      completedAt: '2025-09-29 11:15:00'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      email: 'emily.rodriguez@email.com',
-      position: 'Backend Developer',
-      status: 'scheduled',
-      score: null,
-      interviewDate: '2025-09-30',
-      duration: null,
-      experience: '4 years',
-      skills: ['Java', 'Spring Boot', 'MongoDB'],
-      avatar: null,
-      scheduledAt: '2025-09-30 14:00:00'
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      email: 'david.kim@email.com',
-      position: 'DevOps Engineer',
-      status: 'completed',
-      score: 95,
-      interviewDate: '2025-09-28',
-      duration: '50 min',
-      experience: '6 years',
-      skills: ['AWS', 'Docker', 'Kubernetes'],
-      avatar: null,
-      completedAt: '2025-09-28 16:45:00'
-    },
-    {
-      id: 5,
-      name: 'Lisa Thompson',
-      email: 'lisa.thompson@email.com',
-      position: 'UI/UX Designer',
-      status: 'cancelled',
-      score: null,
-      interviewDate: '2025-09-27',
-      duration: null,
-      experience: '4 years',
-      skills: ['Figma', 'Adobe XD', 'Prototyping'],
-      avatar: null,
-      cancelledAt: '2025-09-27 10:00:00'
-    },
-    {
-      id: 6,
-      name: 'Robert Wilson',
-      email: 'robert.wilson@email.com',
-      position: 'Full Stack Developer',
-      status: 'completed',
-      score: 76,
-      interviewDate: '2025-09-28',
-      duration: '38 min',
-      experience: '2 years',
-      skills: ['React', 'Express.js', 'MySQL'],
-      avatar: null,
-      completedAt: '2025-09-28 14:20:00'
-    },
-    {
-      id: 7,
-      name: 'Jennifer Davis',
-      email: 'jennifer.davis@email.com',
-      position: 'Frontend Developer',
-      status: 'completed',
-      score: 84,
-      interviewDate: '2025-09-29',
-      duration: '41 min',
-      experience: '3 years',
-      skills: ['Angular', 'TypeScript', 'SCSS'],
-      avatar: null,
-      completedAt: '2025-09-29 09:45:00'
-    },
-    {
-      id: 8,
-      name: 'James Martinez',
-      email: 'james.martinez@email.com',
-      position: 'Backend Developer',
-      status: 'scheduled',
-      score: null,
-      interviewDate: '2025-09-30',
-      duration: null,
-      experience: '5 years',
-      skills: ['Python', 'Django', 'Redis'],
-      avatar: null,
-      scheduledAt: '2025-09-30 10:30:00'
-    }
-  ];
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setCandidates(mockCandidates);
-      setFilteredCandidates(mockCandidates);
+    const loadDashboardData = async () => {
+      setLoading(true);
       
-      // Calculate metrics
-      const completed = mockCandidates?.filter(c => c?.status === 'completed');
-      const totalScore = completed?.reduce((sum, c) => sum + (c?.score || 0), 0);
-      const averageScore = completed?.length > 0 ? Math.round(totalScore / completed?.length) : 0;
-      const completionRate = Math.round((completed?.length / mockCandidates?.length) * 100);
-      const pending = mockCandidates?.filter(c => c?.status === 'scheduled')?.length;
+      try {
+        // Load completed interviews
+        const completedInterviews = interviewService.getCompletedInterviews();
+        
+        // Transform interview data to candidate format
+        const candidateData = completedInterviews.map((interview, index) => {
+          const totalScore = interview.evaluations?.reduce((sum, eval) => sum + (eval.score || 0), 0) || 0;
+          const maxTotalScore = interview.evaluations?.reduce((sum, eval) => sum + (eval.maxScore || 0), 0) || 100;
+          const finalScore = maxTotalScore > 0 ? Math.round((totalScore / maxTotalScore) * 100) : 0;
+          
+          const start = new Date(interview.startTime);
+          const end = new Date(interview.endTime);
+          const durationMs = end - start;
+          const minutes = Math.floor(durationMs / 60000);
+          const duration = `${minutes} min`;
+          
+          return {
+            id: interview.id,
+            name: interview.candidateData?.fullName || 'Unknown Candidate',
+            email: interview.candidateData?.email || '',
+            position: interview.candidateData?.position || 'Full Stack Developer',
+            status: interview.status,
+            score: finalScore,
+            interviewDate: new Date(interview.startTime).toISOString().split('T')[0],
+            duration,
+            experience: `${interview.candidateData?.experience || 3} years`,
+            skills: interview.candidateData?.skills || [],
+            avatar: null,
+            completedAt: interview.endTime,
+            interviewSession: interview // Store full session for detailed view
+          };
+        });
+        
+        // Add current session if exists
+        const currentSession = interviewService.loadInterviewSession();
+        if (currentSession && currentSession.status === 'in-progress') {
+          candidateData.push({
+            id: currentSession.id,
+            name: currentSession.candidateData?.fullName || 'Current Candidate',
+            email: currentSession.candidateData?.email || '',
+            position: currentSession.candidateData?.position || 'Full Stack Developer',
+            status: 'in-progress',
+            score: null,
+            interviewDate: new Date(currentSession.startTime).toISOString().split('T')[0],
+            duration: null,
+            experience: `${currentSession.candidateData?.experience || 3} years`,
+            skills: currentSession.candidateData?.skills || [],
+            avatar: null,
+            interviewSession: currentSession
+          });
+        }
+        
+        setCandidates(candidateData);
+        setFilteredCandidates(candidateData);
+        
+        // Calculate metrics
+        const completed = candidateData.filter(c => c.status === 'completed');
+        const totalScore = completed.reduce((sum, c) => sum + (c.score || 0), 0);
+        const averageScore = completed.length > 0 ? Math.round(totalScore / completed.length) : 0;
+        const completionRate = candidateData.length > 0 ? Math.round((completed.length / candidateData.length) * 100) : 0;
+        const pending = candidateData.filter(c => c.status === 'in-progress' || c.status === 'scheduled').length;
 
-      setDashboardMetrics({
-        totalCandidates: mockCandidates?.length,
-        averageScore,
-        completionRate,
-        pendingInterviews: pending
-      });
+        setDashboardMetrics({
+          totalCandidates: candidateData.length,
+          averageScore,
+          completionRate,
+          pendingInterviews: pending
+        });
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
       
-      setLoading(false);
-    }, 1000);
+    loadDashboardData();
   }, []);
 
   const handleSearch = (searchTerm) => {
@@ -244,7 +188,13 @@ const InterviewerDashboard = () => {
   };
 
   const handleCandidateSelect = (candidate) => {
-    navigate('/candidate-profile', { state: { candidate } });
+    // Navigate to candidate profile with interview session data
+    navigate(`/candidate-profile/${candidate.id}`, { 
+      state: { 
+        candidate,
+        interviewSession: candidate.interviewSession 
+      } 
+    });
   };
 
   const handleBulkAction = (action, selectedIds) => {
