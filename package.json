@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@google/genai": "^1.21.0",
+=======
+>>>>>>> 8a707f85abefdd2023ef0b8e8cf4df6739a4cfab
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.9.0",
