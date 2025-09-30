@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import resumeParser from '../../services/resumeParser';
+import interviewService from '../../services/interviewService';
 import Header from '../../components/ui/Header';
 import CandidateProgressIndicator from '../../components/ui/CandidateProgressIndicator';
 import FileUploadZone from './components/FileUploadZone';
@@ -26,13 +28,6 @@ const ResumeUpload = () => {
   const [missingFields, setMissingFields] = useState([]);
   const [isStartingInterview, setIsStartingInterview] = useState(false);
 
-  // Mock extracted data for demonstration
-  const mockExtractedData = {
-    fullName: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
-    phone: "+1 (555) 123-4567"
-  };
-
   useEffect(() => {
     // Check for missing fields and show chatbot if needed
     const missing = [];
@@ -50,7 +45,7 @@ const ResumeUpload = () => {
     }
   }, [candidateData, uploadedFile, isExtracting]);
 
-  const simulateFileUpload = (file) => {
+  const simulateFileUpload = async (file) => {
     setIsUploading(true);
     setUploadProgress(0);
     
@@ -59,7 +54,7 @@ const ResumeUpload = () => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsUploading(false);
-          simulateDataExtraction();
+          extractDataFromResume(file);
           return 100;
         }
         return prev + 10;
@@ -67,14 +62,34 @@ const ResumeUpload = () => {
     }, 200);
   };
 
-  const simulateDataExtraction = () => {
+  const extractDataFromResume = async (file) => {
     setIsExtracting(true);
     
-    setTimeout(() => {
-      setExtractedData(mockExtractedData);
-      setCandidateData(mockExtractedData);
+    try {
+      const result = await resumeParser.parseResume(file);
+      
+      if (result.success) {
+        setExtractedData(result.data);
+        setCandidateData(result.data);
+      } else {
+        console.error('Resume parsing failed:', result.error);
+        // Use fallback data
+        const fallbackData = {
+          fullName: "",
+          email: "",
+          phone: "",
+          skills: [],
+          experience: 0,
+          position: "Full Stack Developer"
+        };
+        setExtractedData(fallbackData);
+        setCandidateData(fallbackData);
+      }
+    } catch (error) {
+      console.error('Error extracting resume data:', error);
+    } finally {
       setIsExtracting(false);
-    }, 3000);
+    }
   };
 
   const handleFileSelect = (file) => {
@@ -97,25 +112,21 @@ const ResumeUpload = () => {
     }));
   };
 
-  const handleStartInterview = () => {
+  const handleStartInterview = async () => {
     if (!isFormValid || !uploadedFile) return;
     
     setIsStartingInterview(true);
     
-    // Save session data to localStorage
-    const sessionData = {
-      candidateData,
-      resumeFile: uploadedFile?.name,
-      startTime: new Date()?.toISOString(),
-      currentStep: 1
-    };
-    
-    localStorage.setItem('interview_session', JSON.stringify(sessionData));
-    
-    // Simulate interview preparation
-    setTimeout(() => {
+    try {
+      // Start interview using the interview service
+      const interviewSession = await interviewService.startInterview(candidateData);
+      
+      // Navigate to interview questions
       navigate('/interview-questions');
-    }, 2000);
+    } catch (error) {
+      console.error('Error starting interview:', error);
+      setIsStartingInterview(false);
+    }
   };
 
   const getValidationStatus = () => {
