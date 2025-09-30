@@ -48,9 +48,9 @@ const InterviewComplete = () => {
   const transformInterviewData = (interviewSession) => {
     const { candidateData, questions, answers, evaluations, finalSummary, startTime, endTime } = interviewSession;
     
-    // Calculate total score
-    const totalScore = evaluations.reduce((sum, eval) => sum + (eval.score || 0), 0);
-    const maxTotalScore = evaluations.reduce((sum, eval) => sum + (eval.maxScore || 0), 0);
+  // Calculate total score
+  const totalScore = evaluations.reduce((sum, evaluation) => sum + (evaluation.score || 0), 0);
+  const maxTotalScore = evaluations.reduce((sum, evaluation) => sum + (evaluation.maxScore || 0), 0);
     const finalScore = maxTotalScore > 0 ? Math.round((totalScore / maxTotalScore) * 100) : 0;
     
     // Calculate duration

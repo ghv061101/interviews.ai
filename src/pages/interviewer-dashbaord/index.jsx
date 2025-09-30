@@ -32,8 +32,8 @@ const InterviewerDashboard = () => {
         
         // Transform interview data to candidate format
         const candidateData = completedInterviews.map((interview, index) => {
-          const totalScore = interview.evaluations?.reduce((sum, eval) => sum + (eval.score || 0), 0) || 0;
-          const maxTotalScore = interview.evaluations?.reduce((sum, eval) => sum + (eval.maxScore || 0), 0) || 100;
+          const totalScore = interview.evaluations?.reduce((sum, evaluation) => sum + (evaluation.score || 0), 0) || 0;
+          const maxTotalScore = interview.evaluations?.reduce((sum, evaluation) => sum + (evaluation.maxScore || 0), 0) || 100;
           const finalScore = maxTotalScore > 0 ? Math.round((totalScore / maxTotalScore) * 100) : 0;
           
           const start = new Date(interview.startTime);
