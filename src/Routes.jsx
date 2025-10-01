@@ -9,8 +9,6 @@ import InterviewerDashboard from './pages/interviewer-dashbaord';
 import InterviewComplete from './pages/interview-complete';
 import WelcomeBackModal from './pages/welcome-back-modal';
 import ResumeUpload from './pages/resume-upload';
-import LoginScreen from './pages/login-screen';
-import SignupScreen from './pages/signup-screen';
 
 const Routes = () => {
   return (
@@ -19,10 +17,6 @@ const Routes = () => {
         <ErrorBoundary>
           <ScrollToTop />
           <RouterRoutes>
-            {/* Authentication Routes */}
-            <Route path="/login-screen" element={<LoginScreen />} />
-            <Route path="/signup-screen" element={<SignupScreen />} />
-            {/* Application Routes */}
             <Route path="/" element={<ResumeUpload />} />
             <Route path="/candidate-profile" element={<CandidateProfile />} />
             <Route path="/interview-questions" element={<InterviewQuestions />} />

@@ -1,4 +1,4 @@
-import geminiService from './geminiService';
+import openaiService from './openaiService';
 
 class InterviewService {
   constructor() {
@@ -40,7 +40,7 @@ class InterviewService {
     const questionNumber = currentQuestionIndex + 1;
 
     try {
-      const question = await geminiService.generateQuestion(
+      const question = await openaiService.generateQuestion(
         difficulty,
         questionNumber,
         candidateData,
@@ -76,7 +76,7 @@ class InterviewService {
 
     // Evaluate answer using AI
     try {
-      const evaluation = await geminiService.evaluateAnswer(
+      const evaluation = await openaiService.evaluateAnswer(
         currentQuestion,
         answer,
         interviewSession.candidateData
@@ -119,7 +119,7 @@ class InterviewService {
     }));
 
     try {
-      const finalSummary = await geminiService.generateFinalSummary(
+      const finalSummary = await openaiService.generateFinalSummary(
         interviewSession.candidateData,
         questionsAndAnswers
       );

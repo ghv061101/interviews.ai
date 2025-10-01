@@ -1,4 +1,4 @@
-import geminiService from './geminiService';
+import openaiService from './openaiService';
 
 class ResumeParser {
   constructor() {
@@ -14,8 +14,8 @@ class ResumeParser {
       // Extract text from file
       const text = await this.extractTextFromFile(file);
       
-      // Use Gemini AI to extract structured data
-      const extractedData = await geminiService.extractResumeData(text);
+      // Use OpenAI to extract structured data
+      const extractedData = await openaiService.extractResumeData(text);
       
       return {
         success: true,
